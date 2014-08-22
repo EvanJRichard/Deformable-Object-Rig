@@ -40,6 +40,7 @@ remainder: padding
 
 //UDP socket event handler c/o Shobhit Kukreti 
 //http://mbed.org/forum/helloworld/topic/1689/
+//this will be called whenever there is an available message to be read.
 /*
 void onUDPSocketEvent(UDPSocketEvent e) {
      if ( e == UDPSOCKET_READABLE ) {
