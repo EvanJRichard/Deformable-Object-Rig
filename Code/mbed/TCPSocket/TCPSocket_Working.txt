@@ -1,0 +1,58 @@
+#include "mbed.h"
+#include "EthernetInterface.h"
+#include "UDPSocket.h"
+
+EthernetInterface g_eth;
+UDPSocket g_udp;
+Endpoint g_miso;
+char g_buffer[256];
+int g_buffer_size = 256;
+
+void FrameReceivedCB(char* buffer)
+{
+    //Parse info
+    uint32_t command = 0; // first 4 bytes
+    uint8_t len = buffer[4];
+    char* data[len];
+    memcpy(data, buffer + 5, len);
+    printf("Recv data: [%s]\r\n", data);
+    // Respond
+    char response[g_buffer_size];
+    response[4] = 0x04;
+    response[5] = 'e';
+    response[6] = 'c';
+    response[7] = 'h';
+    response[8] = 'o';
+    g_udp.sendTo(g_miso, response, g_buffer_size);
+}
+
+int main() {
+    // Init Ethernet interface
+    g_eth.init("10.68.0.101", "255.255.255.0", "0.0.0.0");
+    g_eth.connect();
+    printf("IP Address is %s\r\n", g_eth.getIPAddress());
+    // Init UDP interface
+    g_udp.bind(10001);
+    Endpoint mosi;
+    mosi.set_address("10.68.0.1", 10001);
+    g_miso.set_address("10.68.0.1", 10002);
+    while (true)
+    {
+        int read = g_udp.receiveFrom(mosi, g_buffer, g_buffer_size);
+        if (read == g_buffer_size)
+        {
+            printf("Frame received\r\n");
+            FrameReceivedCB(g_buffer);
+        }
+        else if (read >= 0)
+        {
+            printf("*** Partial frame received ***\r\n");
+        }
+        else
+        {
+            ;
+        } 
+    }
+    g_udp.close();
+    g_eth.disconnect();
+}
